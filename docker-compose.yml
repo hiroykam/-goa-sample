@@ -1,0 +1,37 @@
+version: '3'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: ./local-docker/app/Dockerfile
+    container_name: "sample-api"
+    working_dir: "/go/src/github.com/hiroykam/goa-sample"
+    tty: true
+    ports:
+    - "8080:8080"
+    environment:
+      TZ: Asia/Tokyo
+      STAGE: local
+      DATA_SOURCE: ${DATASOURCE}
+    depends_on:
+      - sample-db
+    volumes:
+      - "./:/go/src/github.com/hiroykam/goa-sample/"
+
+  sample-db:
+    image: mysql:5.7
+    command: mysqld --character-set-server=utf8 --collation-server=utf8_unicode_ci
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD:
+      MYSQL_ALLOW_EMPTY_PASSWORD: "true"
+      MYSQL_DATABASE: ${DATABASE}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      TZ: "Asia/Tokyo"
+    ports:
+      - ${DB_PORT}:${DB_PORT}
+    volumes:
+      - ./mysql/mysql:/var/lib/mysql
+    container_name: sample-db
