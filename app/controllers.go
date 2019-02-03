@@ -15,7 +15,6 @@ import (
 	"github.com/goadesign/goa"
 	"github.com/goadesign/goa/cors"
 	"net/http"
-	"strconv"
 )
 
 // initService sets up the service encoders, decoders and mux.
@@ -168,21 +167,8 @@ func handleSamplesOrigin(h goa.Handler) goa.Handler {
 
 // unmarshalAddSamplesPayload unmarshals the request body into the context request data Payload field.
 func unmarshalAddSamplesPayload(ctx context.Context, service *goa.Service, req *http.Request) error {
-	var err error
-	var payload addSamplesPayload
-	rawDetail := req.FormValue("detail")
-	payload.Detail = &rawDetail
-	rawName := req.FormValue("name")
-	payload.Name = &rawName
-	rawUserID := req.FormValue("user_id")
-	if userID, err2 := strconv.Atoi(rawUserID); err2 == nil {
-		tmp6 := userID
-		tmp5 := &tmp6
-		payload.UserID = tmp5
-	} else {
-		err = goa.MergeErrors(err, goa.InvalidParamTypeError("user_id", rawUserID, "integer"))
-	}
-	if err != nil {
+	payload := &addSamplesPayload{}
+	if err := service.DecodeRequest(req, payload); err != nil {
 		return err
 	}
 	if err := payload.Validate(); err != nil {

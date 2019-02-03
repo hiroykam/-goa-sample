@@ -54,7 +54,6 @@ var _ = Resource("samples", func() {
 			})
 			Required("user_id", "name", "detail")
 		})
-		MultipartForm()
 		Response(OK, MediaSample)
 		Response(NotFound)
 		Response(BadRequest, ErrorMedia)

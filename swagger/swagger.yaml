@@ -1,6 +1,31 @@
 consumes:
 - application/json
 definitions:
+  AddSamplesPayload:
+    example:
+      detail: sample1の詳細
+      name: sample1のタイトル
+      user_id: 12345
+    properties:
+      detail:
+        description: detail of sample
+        example: sample1の詳細
+        type: string
+      name:
+        description: name of sample
+        example: sample1のタイトル
+        type: string
+      user_id:
+        description: user id
+        example: 12345
+        format: int64
+        type: integer
+    required:
+    - user_id
+    - name
+    - detail
+    title: AddSamplesPayload
+    type: object
   Sample:
     description: sample detail (default view)
     example:
@@ -48,32 +73,6 @@ definitions:
     - updated_at
     title: 'Mediatype identifier: application/vnd.sample+json; view=default'
     type: object
-  SampleCollection:
-    description: SampleCollection is the media type for an array of Sample (default
-      view)
-    example:
-    - created_at: "2019-01-31T00:00:00+09:00"
-      detail: サンプル1の詳細
-      id: 1
-      name: サンプル1
-      updated_at: "2019-01-31T12:30:50+09:00"
-      user_id: 1
-    - created_at: "2019-01-31T00:00:00+09:00"
-      detail: サンプル1の詳細
-      id: 1
-      name: サンプル1
-      updated_at: "2019-01-31T12:30:50+09:00"
-      user_id: 1
-    - created_at: "2019-01-31T00:00:00+09:00"
-      detail: サンプル1の詳細
-      id: 1
-      name: サンプル1
-      updated_at: "2019-01-31T12:30:50+09:00"
-      user_id: 1
-    items:
-      $ref: '#/definitions/Sample'
-    title: 'Mediatype identifier: application/vnd.sample+json; type=collection; view=default'
-    type: array
   Samples:
     description: sample list (default view)
     example:
@@ -120,24 +119,35 @@ definitions:
       id: 1
       name: サンプル1
       updated_at: "2019-01-31T12:30:50+09:00"
+    - created_at: "2019-01-31T00:00:00+09:00"
+      id: 1
+      name: サンプル1
+      updated_at: "2019-01-31T12:30:50+09:00"
     items:
       $ref: '#/definitions/Samples'
     title: 'Mediatype identifier: application/vnd.samples+json; type=collection; view=default'
     type: array
   UpdateSamplesPayload:
     example:
-      detail: sample1
-      name: sample1
+      detail: sample1の詳細
+      name: sample1のタイトル
+      user_id: 12345
     properties:
       detail:
         description: detail of sample
-        example: sample1
+        example: sample1の詳細
         type: string
       name:
         description: name of sample
-        example: sample1
+        example: sample1のタイトル
         type: string
+      user_id:
+        description: name of sample
+        example: 12345
+        format: int64
+        type: integer
     required:
+    - user_id
     - name
     - detail
     title: UpdateSamplesPayload
@@ -193,7 +203,7 @@ paths:
       - description: user id
         in: query
         name: user_id
-        required: false
+        required: true
         type: integer
       produces:
       - application/vnd.goa.error
@@ -216,40 +226,26 @@ paths:
       tags:
       - samples
     post:
-      consumes:
-      - multipart/form-data
       description: 追加
       operationId: samples#add
       parameters:
-      - description: detail of sample
-        in: formData
-        name: detail
+      - in: body
+        name: payload
         required: true
-        type: string
-      - description: name of sample
-        in: formData
-        name: name
-        required: true
-        type: string
-      - description: user id
-        in: formData
-        name: user_id
-        required: true
-        type: string
+        schema:
+          $ref: '#/definitions/AddSamplesPayload'
       produces:
       - application/vnd.goa.error
-      - application/vnd.sample+json; type=collection
+      - application/vnd.sample+json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SampleCollection'
+            $ref: '#/definitions/Sample'
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/error'
-        "401":
-          description: Unauthorized
         "404":
           description: Not Found
       schemes:
@@ -277,8 +273,6 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/error'
-        "401":
-          description: Unauthorized
         "404":
           description: Not Found
       schemes:
@@ -291,30 +285,23 @@ paths:
       description: 単数
       operationId: samples#show
       parameters:
-      - description: sample data id
+      - description: sample id
         in: path
         name: id
         required: true
         type: integer
-      - description: user id
-        in: query
-        name: user_id
-        required: false
-        type: integer
       produces:
       - application/vnd.goa.error
-      - application/vnd.sample+json; type=collection
+      - application/vnd.sample+json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SampleCollection'
+            $ref: '#/definitions/Sample'
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/error'
-        "401":
-          description: Unauthorized
         "404":
           description: Not Found
       schemes:
@@ -323,7 +310,7 @@ paths:
       summary: show samples
       tags:
       - samples
-    put:
+    patch:
       description: 更新
       operationId: samples#update
       parameters:
@@ -407,8 +394,6 @@ responses:
     description: No Content
   NotFound:
     description: Not Found
-  Unauthorized:
-    description: Unauthorized
 schemes:
 - http
 - https
