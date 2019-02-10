@@ -28,11 +28,10 @@ func (c *SamplesController) Add(ctx *app.AddSamplesContext) error {
 	// SamplesController_Add: start_implement
 
 	// Put your logic here
-	l, err := sample_logger.New(ctx)
+	l, err := sample_logger.NewSampleLooger(ctx)
 	if err != nil {
 		return ctx.BadRequest(err)
 	}
-	l.Info("Sample::Add")
 
 	s := services.NewSampleService(c.db)
 	res, err := s.Add(ctx.Payload.UserID, ctx.Payload.Name, ctx.Payload.Detail)
@@ -50,11 +49,10 @@ func (c *SamplesController) Delete(ctx *app.DeleteSamplesContext) error {
 	// SamplesController_Delete: start_implement
 
 	// Put your logic here
-	l, err := sample_logger.New(ctx)
+	l, err := sample_logger.NewSampleLooger(ctx)
 	if err != nil {
 		return ctx.BadRequest(err)
 	}
-	l.Info("Sample::Delete")
 
 	s := services.NewSampleService(c.db)
 	err = s.Delete(ctx.ID)
@@ -75,11 +73,10 @@ func (c *SamplesController) List(ctx *app.ListSamplesContext) error {
 	// SamplesController_List: start_implement
 
 	// Put your logic here
-	l, err := sample_logger.New(ctx)
+	l, err := sample_logger.NewSampleLooger(ctx)
 	if err != nil {
 		return ctx.BadRequest(err)
 	}
-	l.Info("Sample::List")
 
 	s := services.NewSampleService(c.db)
 	res, err := s.GetSamples(ctx.UserID)
@@ -99,11 +96,10 @@ func (c *SamplesController) Show(ctx *app.ShowSamplesContext) error {
 	// SamplesController_Show: start_implement
 
 	// Put your logic here
-	l, err := sample_logger.New(ctx)
+	l, err := sample_logger.NewSampleLooger(ctx)
 	if err != nil {
 		return ctx.BadRequest(err)
 	}
-	l.Info("Sample::Show")
 
 	s := services.NewSampleService(c.db)
 	res, err := s.Show(ctx.ID)
@@ -124,11 +120,10 @@ func (c *SamplesController) Update(ctx *app.UpdateSamplesContext) error {
 	// SamplesController_Update: start_implement
 
 	// Put your logic here
-	l, err := sample_logger.New(ctx)
+	l, err := sample_logger.NewSampleLooger(ctx)
 	if err != nil {
 		return ctx.BadRequest(err)
 	}
-	l.Info("Sample::Update")
 
 	s := services.NewSampleService(c.db)
 	err = s.Update(ctx.ID, ctx.Payload.UserID, ctx.Payload.Name, ctx.Payload.Detail)

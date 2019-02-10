@@ -8,6 +8,7 @@ import (
 	"github.com/hiroykam/goa-sample/app"
 	"github.com/hiroykam/goa-sample/controller"
 	"github.com/hiroykam/goa-sample/db"
+	"github.com/hiroykam/goa-sample/sample_middleware"
 )
 
 func main() {
@@ -16,8 +17,9 @@ func main() {
 
 	// Mount middleware
 	service.Use(middleware.RequestID())
-	service.Use(middleware.LogRequest(true))
 	service.Use(middleware.ErrorHandler(service, true))
+	service.Use(sample_middleware.LogRequest(true))
+	service.Use(sample_middleware.LogResponse())
 	service.Use(middleware.Recover())
 
 	gdb, err := db.Open()

@@ -12,44 +12,44 @@ import (
 	"github.com/inconshreveable/log15"
 )
 
-type Parameters struct {
+type SampleLogger struct {
 	logTime     string
 	requestID   string
 	requestBody string
 	requestPath string
 	uid         string
 	message     string
-	logger      log15.Logger
+	Logger      log15.Logger
 }
 
-type Option func(*Parameters)
+type Option func(*SampleLogger)
 
 func LogTime(l string) Option {
-	return func(args *Parameters) {
+	return func(args *SampleLogger) {
 		args.logTime = l
 	}
 }
 
 func RequestId(id string) Option {
-	return func(args *Parameters) {
+	return func(args *SampleLogger) {
 		args.requestID = id
 	}
 }
 
 func RequestPath(p string) Option {
-	return func(args *Parameters) {
+	return func(args *SampleLogger) {
 		args.requestPath = p
 	}
 }
 
 func UID(uid string) Option {
-	return func(args *Parameters) {
+	return func(args *SampleLogger) {
 		args.uid = uid
 	}
 }
 
-func New(ctx context.Context, opts ...Option) (*Parameters, *sample_error.SampleError) {
-	p := &Parameters{
+func NewSampleLooger(ctx context.Context, opts ...Option) (*SampleLogger, *sample_error.SampleError) {
+	p := &SampleLogger{
 		logTime:     time.Now().Format(time.RFC3339),
 		requestID:   middleware.ContextRequestID(ctx),
 		requestPath: "",
@@ -57,9 +57,9 @@ func New(ctx context.Context, opts ...Option) (*Parameters, *sample_error.Sample
 		uid:         "",
 		message:     "",
 
-		logger: log15.New(log15.Ctx{"module": "goa-sample"}),
+		Logger: log15.New(log15.Ctx{"module": "goa-sample"}),
 	}
-	p.logger.SetHandler(log15.StreamHandler(os.Stdout, log15.JsonFormat()))
+	p.Logger.SetHandler(log15.StreamHandler(os.Stdout, log15.JsonFormat()))
 
 	gc := goa.ContextRequest(ctx)
 	j, err := json.Marshal(gc.Payload)
@@ -74,8 +74,8 @@ func New(ctx context.Context, opts ...Option) (*Parameters, *sample_error.Sample
 	return p, nil
 }
 
-func (p *Parameters) Info(msg string) {
-	p.logger.Info(p.message,
+func (p *SampleLogger) Info(msg string) {
+	p.Logger.Info(msg,
 		"logTime", p.logTime,
 		"RequestID", p.requestID,
 		"RequestBody", p.requestBody,
@@ -83,8 +83,8 @@ func (p *Parameters) Info(msg string) {
 		"UID", p.uid)
 }
 
-func (p *Parameters) Debug(msg string) {
-	p.logger.Debug(p.message,
+func (p *SampleLogger) Debug(msg string) {
+	p.Logger.Debug(msg,
 		"logTime", p.logTime,
 		"RequestID", p.requestID,
 		"RequestBody", p.requestBody,
@@ -92,8 +92,8 @@ func (p *Parameters) Debug(msg string) {
 		"UID", p.uid)
 }
 
-func (p *Parameters) Error(msg string) {
-	p.logger.Error(p.message,
+func (p *SampleLogger) Error(msg string) {
+	p.Logger.Error(msg,
 		"logTime", p.logTime,
 		"RequestID", p.requestID,
 		"RequestBody", p.requestBody,
@@ -101,8 +101,8 @@ func (p *Parameters) Error(msg string) {
 		"UID", p.uid)
 }
 
-func (p *Parameters) Warn(msg string) {
-	p.logger.Warn(p.message,
+func (p *SampleLogger) Warn(msg string) {
+	p.Logger.Warn(msg,
 		"logTime", p.logTime,
 		"RequestID", p.requestID,
 		"RequestBody", p.requestBody,
@@ -110,11 +110,10 @@ func (p *Parameters) Warn(msg string) {
 		"UID", p.uid)
 }
 
-func (p *Parameters) SampleError(err *sample_error.SampleError) {
+func (p *SampleLogger) SampleError(err *sample_error.SampleError) {
 	if err.Code == sample_error.InternalError {
 		p.Error(err.Msg)
 	} else {
 		p.Warn(err.Msg)
 	}
 }
-
