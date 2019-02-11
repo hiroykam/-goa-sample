@@ -37,13 +37,14 @@ func (m *SampleModel) List(userId int) ([]*entities.Sample, *sample_error.Sample
 	var objs []*entities.Sample
 
 	db := m.db.Table(m.TableName()).Where("user_id = ?", userId).Find(&objs)
-	if db.Error == gorm.ErrRecordNotFound {
-		return nil, sample_error.NewSampleError(sample_error.NotFoundError, db.Error.Error())
-	} else if db.Error != nil {
+	if db.Error != nil {
 		return nil, sample_error.NewSampleError(sample_error.InternalError, db.Error.Error())
 	}
 
-	return objs, nil
+	if len(objs) > 0 {
+		return objs, nil
+	}
+	return nil, sample_error.NewSampleError(sample_error.NotFoundError, db.Error.Error())
 }
 
 func (m *SampleModel) Add(s *entities.Sample) *sample_error.SampleError {
