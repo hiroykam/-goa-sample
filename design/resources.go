@@ -5,22 +5,46 @@ import (
 	. "github.com/goadesign/goa/design/apidsl"
 )
 
+var JWT = JWTSecurity("jwt", func() {
+	Header("Authorization")
+	Scope("api:access", "API access") // Define "api:access" scope
+})
+
+var _ = Resource("auth", func() {
+	Action("login", func() {
+		Routing(POST("/login"))
+		Payload(func() {
+			Attribute("email", String, "name of sample", func() {
+				Example("sample@goa-sample.test.com")
+			})
+			Attribute("password", String, "detail of sample", func() {
+				Example("test1234")
+			})
+			Required("email", "password")
+		})
+		Response(OK, AuthSamples)
+		Response(NotFound)
+		Response(BadRequest, ErrorMedia)
+	})
+})
+
 var _ = Resource("samples", func() {
 	BasePath("/samples")
+	Description("sample APIs with JWT Authorization")
+
+	Security(JWT, func() {
+		Scope("api:access")
+	})
+
 	Action("list", func() {
 		Description("複数")
 		Routing(
 			GET("/"),
 		)
-		Params(func() {
-			Param("user_id", Integer, "user id", func() {
-				Example(12345)
-			})
-			Required("user_id")
-		})
 		Response(OK, CollectionOf(MediaSamples))
 		Response(NotFound)
 		Response(BadRequest, ErrorMedia)
+		Response(Unauthorized, ErrorMedia)
 	})
 	Action("show", func() {
 		Description("単数")
@@ -35,6 +59,7 @@ var _ = Resource("samples", func() {
 		})
 		Response(OK, MediaSample)
 		Response(NotFound)
+		Response(Unauthorized, ErrorMedia)
 		Response(BadRequest, ErrorMedia)
 	})
 	Action("add", func() {
@@ -43,19 +68,17 @@ var _ = Resource("samples", func() {
 			POST("/"),
 		)
 		Payload(func() {
-			Attribute("user_id", Integer, "user id", func() {
-				Example(12345)
-			})
 			Attribute("name", String, "name of sample", func() {
 				Example("sample1のタイトル")
 			})
 			Attribute("detail", String, "detail of sample", func() {
 				Example("sample1の詳細")
 			})
-			Required("user_id", "name", "detail")
+			Required("name", "detail")
 		})
 		Response(OK, MediaSample)
 		Response(NotFound)
+		Response(Unauthorized, ErrorMedia)
 		Response(BadRequest, ErrorMedia)
 	})
 	Action("delete", func() {
@@ -71,6 +94,7 @@ var _ = Resource("samples", func() {
 		})
 		Response(NoContent)
 		Response(NotFound)
+		Response(Unauthorized, ErrorMedia)
 		Response(BadRequest, ErrorMedia)
 	})
 	Action("update", func() {
@@ -83,19 +107,17 @@ var _ = Resource("samples", func() {
 			Required("id")
 		})
 		Payload(func() {
-			Param("user_id", Integer, "name of sample", func() {
-				Example(12345)
-			})
 			Param("name", String, "name of sample", func() {
 				Example("sample1のタイトル")
 			})
 			Param("detail", String, "detail of sample", func() {
 				Example("sample1の詳細")
 			})
-			Required("user_id", "name", "detail")
+			Required("name", "detail")
 		})
 		Response(NoContent)
 		Response(NotFound)
+		Response(Unauthorized, ErrorMedia)
 		Response(BadRequest, ErrorMedia)
 	})
 })

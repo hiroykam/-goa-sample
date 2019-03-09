@@ -6,8 +6,10 @@ type SampleErrorCode int
 
 const (
 	UnknownError = iota
+	UnAuthorized
 	NotFoundError
-	AlreadyExist
+	WrongPassword
+	AlreadyExistError
 	InternalError
 )
 
@@ -25,9 +27,13 @@ func NewSampleError(code SampleErrorCode, msg string) *SampleError {
 
 func (err *SampleError) Error() string {
 	switch err.Code {
+	case UnAuthorized:
+		return fmt.Sprintf("ERROR: UnAuthorizedError %s", err.Msg)
 	case NotFoundError:
 		return fmt.Sprintf("ERROR: NotFoundError %s", err.Msg)
-	case AlreadyExist:
+	case WrongPassword:
+		return fmt.Sprintf("ERROR: WrongPassword %s", err.Msg)
+	case AlreadyExistError:
 		return fmt.Sprintf("ERROR: AlreadyExistError %s", err.Msg)
 	case InternalError:
 		return fmt.Sprintf("ERROR: InternalError %s", err.Msg)

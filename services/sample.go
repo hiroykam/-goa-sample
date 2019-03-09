@@ -1,6 +1,7 @@
 package services
 
 import (
+	"github.com/dgrijalva/jwt-go"
 	"github.com/hiroykam/goa-sample/app"
 	"github.com/hiroykam/goa-sample/models"
 	"github.com/hiroykam/goa-sample/models/entities"
@@ -10,12 +11,19 @@ import (
 
 type SampleService struct {
 	model *models.SampleModel
+	User  *UserService
 }
 
-func NewSampleService(db *gorm.DB) *SampleService {
+func NewSampleService(db *gorm.DB) (*SampleService, *sample_error.SampleError) {
+	u, err := NewUserService(db)
+	if err != nil {
+		return nil, err
+	}
+
 	return &SampleService{
 		model: models.NewSampleModel(db),
-	}
+		User:  u,
+	}, nil
 }
 
 func convertSample(e *entities.Sample) *app.Sample {
@@ -47,8 +55,13 @@ func convertSamplesCollection(es []*entities.Sample) app.SamplesCollection {
 	return objs
 }
 
-func (s *SampleService) GetSamples(userId int) (app.SamplesCollection, *sample_error.SampleError) {
-	r, err := s.model.List(userId)
+func (s *SampleService) GetSamples(token *jwt.Token) (app.SamplesCollection, *sample_error.SampleError) {
+	id, err := s.User.AuthWithToken(token)
+	if err != nil {
+		return nil, err
+	}
+
+	r, err := s.model.List(*id)
 	if err != nil {
 		return nil, err
 	}
@@ -57,42 +70,62 @@ func (s *SampleService) GetSamples(userId int) (app.SamplesCollection, *sample_e
 	return obj, nil
 }
 
-func (s *SampleService) Add(userId int, name string, detail string) (*app.Sample, *sample_error.SampleError) {
+func (s *SampleService) Add(token *jwt.Token, name string, detail string) (*app.Sample, *sample_error.SampleError) {
+	id, err := s.User.AuthWithToken(token)
+	if err != nil {
+		return nil, err
+	}
+
 	e := &entities.Sample{}
-	e.UserID = userId
+	e.UserID = *id
 	e.Name = name
 	e.Detail = detail
 
-	err := s.model.Add(e)
+	err = s.model.Add(e)
 	if err != nil {
 		return nil, err
 	}
 	return convertSample(e), nil
 }
 
-func (s *SampleService) Show(id int) (*app.Sample, *sample_error.SampleError) {
-	e, err := s.model.Get(id)
+func (s *SampleService) Show(token *jwt.Token, id int) (*app.Sample, *sample_error.SampleError) {
+	userId, err := s.User.AuthWithToken(token)
+	if err != nil {
+		return nil, err
+	}
+
+	e, err := s.model.Get(id, *userId)
 	if err != nil {
 		return nil, err
 	}
 	return convertSample(e), nil
 }
 
-func (s *SampleService) Update(id int, userId int, name string, detail string) *sample_error.SampleError {
+func (s *SampleService) Update(token *jwt.Token, id int, name string, detail string) *sample_error.SampleError {
+	userId, err := s.User.AuthWithToken(token)
+	if err != nil {
+		return err
+	}
+
 	e := &entities.Sample{}
 	e.ID = id
-	e.UserID = userId
+	e.UserID = *userId
 	e.Name = name
 	e.Detail = detail
-	err := s.model.Update(e)
+	err = s.model.Update(e)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *SampleService) Delete(id int) *sample_error.SampleError {
-	err := s.model.Delete(id)
+func (s *SampleService) Delete(token *jwt.Token, id int) *sample_error.SampleError {
+	userId, err := s.User.AuthWithToken(token)
+	if err != nil {
+		return err
+	}
+
+	err = s.model.Delete(id, *userId)
 	if err != nil {
 		return err
 	}

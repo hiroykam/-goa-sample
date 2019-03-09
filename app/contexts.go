@@ -17,6 +17,98 @@ import (
 	"strconv"
 )
 
+// LoginAuthContext provides the auth login action context.
+type LoginAuthContext struct {
+	context.Context
+	*goa.ResponseData
+	*goa.RequestData
+	Payload *LoginAuthPayload
+}
+
+// NewLoginAuthContext parses the incoming request URL and body, performs validations and creates the
+// context used by the auth controller login action.
+func NewLoginAuthContext(ctx context.Context, r *http.Request, service *goa.Service) (*LoginAuthContext, error) {
+	var err error
+	resp := goa.ContextResponse(ctx)
+	resp.Service = service
+	req := goa.ContextRequest(ctx)
+	req.Request = r
+	rctx := LoginAuthContext{Context: ctx, ResponseData: resp, RequestData: req}
+	return &rctx, err
+}
+
+// loginAuthPayload is the auth login action payload.
+type loginAuthPayload struct {
+	// name of sample
+	Email *string `form:"email,omitempty" json:"email,omitempty" yaml:"email,omitempty" xml:"email,omitempty"`
+	// detail of sample
+	Password *string `form:"password,omitempty" json:"password,omitempty" yaml:"password,omitempty" xml:"password,omitempty"`
+}
+
+// Validate runs the validation rules defined in the design.
+func (payload *loginAuthPayload) Validate() (err error) {
+	if payload.Email == nil {
+		err = goa.MergeErrors(err, goa.MissingAttributeError(`raw`, "email"))
+	}
+	if payload.Password == nil {
+		err = goa.MergeErrors(err, goa.MissingAttributeError(`raw`, "password"))
+	}
+	return
+}
+
+// Publicize creates LoginAuthPayload from loginAuthPayload
+func (payload *loginAuthPayload) Publicize() *LoginAuthPayload {
+	var pub LoginAuthPayload
+	if payload.Email != nil {
+		pub.Email = *payload.Email
+	}
+	if payload.Password != nil {
+		pub.Password = *payload.Password
+	}
+	return &pub
+}
+
+// LoginAuthPayload is the auth login action payload.
+type LoginAuthPayload struct {
+	// name of sample
+	Email string `form:"email" json:"email" yaml:"email" xml:"email"`
+	// detail of sample
+	Password string `form:"password" json:"password" yaml:"password" xml:"password"`
+}
+
+// Validate runs the validation rules defined in the design.
+func (payload *LoginAuthPayload) Validate() (err error) {
+	if payload.Email == "" {
+		err = goa.MergeErrors(err, goa.MissingAttributeError(`raw`, "email"))
+	}
+	if payload.Password == "" {
+		err = goa.MergeErrors(err, goa.MissingAttributeError(`raw`, "password"))
+	}
+	return
+}
+
+// OK sends a HTTP response with status code 200.
+func (ctx *LoginAuthContext) OK(r *Auth) error {
+	if ctx.ResponseData.Header().Get("Content-Type") == "" {
+		ctx.ResponseData.Header().Set("Content-Type", "application/vnd.auth+json")
+	}
+	return ctx.ResponseData.Service.Send(ctx.Context, 200, r)
+}
+
+// BadRequest sends a HTTP response with status code 400.
+func (ctx *LoginAuthContext) BadRequest(r error) error {
+	if ctx.ResponseData.Header().Get("Content-Type") == "" {
+		ctx.ResponseData.Header().Set("Content-Type", "application/vnd.goa.error")
+	}
+	return ctx.ResponseData.Service.Send(ctx.Context, 400, r)
+}
+
+// NotFound sends a HTTP response with status code 404.
+func (ctx *LoginAuthContext) NotFound() error {
+	ctx.ResponseData.WriteHeader(404)
+	return nil
+}
+
 // AddSamplesContext provides the samples add action context.
 type AddSamplesContext struct {
 	context.Context
@@ -43,15 +135,10 @@ type addSamplesPayload struct {
 	Detail *string `form:"detail,omitempty" json:"detail,omitempty" yaml:"detail,omitempty" xml:"detail,omitempty"`
 	// name of sample
 	Name *string `form:"name,omitempty" json:"name,omitempty" yaml:"name,omitempty" xml:"name,omitempty"`
-	// user id
-	UserID *int `form:"user_id,omitempty" json:"user_id,omitempty" yaml:"user_id,omitempty" xml:"user_id,omitempty"`
 }
 
 // Validate runs the validation rules defined in the design.
 func (payload *addSamplesPayload) Validate() (err error) {
-	if payload.UserID == nil {
-		err = goa.MergeErrors(err, goa.MissingAttributeError(`raw`, "user_id"))
-	}
 	if payload.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingAttributeError(`raw`, "name"))
 	}
@@ -70,9 +157,6 @@ func (payload *addSamplesPayload) Publicize() *AddSamplesPayload {
 	if payload.Name != nil {
 		pub.Name = *payload.Name
 	}
-	if payload.UserID != nil {
-		pub.UserID = *payload.UserID
-	}
 	return &pub
 }
 
@@ -82,13 +166,10 @@ type AddSamplesPayload struct {
 	Detail string `form:"detail" json:"detail" yaml:"detail" xml:"detail"`
 	// name of sample
 	Name string `form:"name" json:"name" yaml:"name" xml:"name"`
-	// user id
-	UserID int `form:"user_id" json:"user_id" yaml:"user_id" xml:"user_id"`
 }
 
 // Validate runs the validation rules defined in the design.
 func (payload *AddSamplesPayload) Validate() (err error) {
-
 	if payload.Name == "" {
 		err = goa.MergeErrors(err, goa.MissingAttributeError(`raw`, "name"))
 	}
@@ -112,6 +193,14 @@ func (ctx *AddSamplesContext) BadRequest(r error) error {
 		ctx.ResponseData.Header().Set("Content-Type", "application/vnd.goa.error")
 	}
 	return ctx.ResponseData.Service.Send(ctx.Context, 400, r)
+}
+
+// Unauthorized sends a HTTP response with status code 401.
+func (ctx *AddSamplesContext) Unauthorized(r error) error {
+	if ctx.ResponseData.Header().Get("Content-Type") == "" {
+		ctx.ResponseData.Header().Set("Content-Type", "application/vnd.goa.error")
+	}
+	return ctx.ResponseData.Service.Send(ctx.Context, 401, r)
 }
 
 // NotFound sends a HTTP response with status code 404.
@@ -163,6 +252,14 @@ func (ctx *DeleteSamplesContext) BadRequest(r error) error {
 	return ctx.ResponseData.Service.Send(ctx.Context, 400, r)
 }
 
+// Unauthorized sends a HTTP response with status code 401.
+func (ctx *DeleteSamplesContext) Unauthorized(r error) error {
+	if ctx.ResponseData.Header().Get("Content-Type") == "" {
+		ctx.ResponseData.Header().Set("Content-Type", "application/vnd.goa.error")
+	}
+	return ctx.ResponseData.Service.Send(ctx.Context, 401, r)
+}
+
 // NotFound sends a HTTP response with status code 404.
 func (ctx *DeleteSamplesContext) NotFound() error {
 	ctx.ResponseData.WriteHeader(404)
@@ -174,7 +271,6 @@ type ListSamplesContext struct {
 	context.Context
 	*goa.ResponseData
 	*goa.RequestData
-	UserID int
 }
 
 // NewListSamplesContext parses the incoming request URL and body, performs validations and creates the
@@ -186,17 +282,6 @@ func NewListSamplesContext(ctx context.Context, r *http.Request, service *goa.Se
 	req := goa.ContextRequest(ctx)
 	req.Request = r
 	rctx := ListSamplesContext{Context: ctx, ResponseData: resp, RequestData: req}
-	paramUserID := req.Params["user_id"]
-	if len(paramUserID) == 0 {
-		err = goa.MergeErrors(err, goa.MissingParamError("user_id"))
-	} else {
-		rawUserID := paramUserID[0]
-		if userID, err2 := strconv.Atoi(rawUserID); err2 == nil {
-			rctx.UserID = userID
-		} else {
-			err = goa.MergeErrors(err, goa.InvalidParamTypeError("user_id", rawUserID, "integer"))
-		}
-	}
 	return &rctx, err
 }
 
@@ -217,6 +302,14 @@ func (ctx *ListSamplesContext) BadRequest(r error) error {
 		ctx.ResponseData.Header().Set("Content-Type", "application/vnd.goa.error")
 	}
 	return ctx.ResponseData.Service.Send(ctx.Context, 400, r)
+}
+
+// Unauthorized sends a HTTP response with status code 401.
+func (ctx *ListSamplesContext) Unauthorized(r error) error {
+	if ctx.ResponseData.Header().Get("Content-Type") == "" {
+		ctx.ResponseData.Header().Set("Content-Type", "application/vnd.goa.error")
+	}
+	return ctx.ResponseData.Service.Send(ctx.Context, 401, r)
 }
 
 // NotFound sends a HTTP response with status code 404.
@@ -270,6 +363,14 @@ func (ctx *ShowSamplesContext) BadRequest(r error) error {
 	return ctx.ResponseData.Service.Send(ctx.Context, 400, r)
 }
 
+// Unauthorized sends a HTTP response with status code 401.
+func (ctx *ShowSamplesContext) Unauthorized(r error) error {
+	if ctx.ResponseData.Header().Get("Content-Type") == "" {
+		ctx.ResponseData.Header().Set("Content-Type", "application/vnd.goa.error")
+	}
+	return ctx.ResponseData.Service.Send(ctx.Context, 401, r)
+}
+
 // NotFound sends a HTTP response with status code 404.
 func (ctx *ShowSamplesContext) NotFound() error {
 	ctx.ResponseData.WriteHeader(404)
@@ -312,15 +413,10 @@ type updateSamplesPayload struct {
 	Detail *string `form:"detail,omitempty" json:"detail,omitempty" yaml:"detail,omitempty" xml:"detail,omitempty"`
 	// name of sample
 	Name *string `form:"name,omitempty" json:"name,omitempty" yaml:"name,omitempty" xml:"name,omitempty"`
-	// name of sample
-	UserID *int `form:"user_id,omitempty" json:"user_id,omitempty" yaml:"user_id,omitempty" xml:"user_id,omitempty"`
 }
 
 // Validate runs the validation rules defined in the design.
 func (payload *updateSamplesPayload) Validate() (err error) {
-	if payload.UserID == nil {
-		err = goa.MergeErrors(err, goa.MissingAttributeError(`raw`, "user_id"))
-	}
 	if payload.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingAttributeError(`raw`, "name"))
 	}
@@ -339,9 +435,6 @@ func (payload *updateSamplesPayload) Publicize() *UpdateSamplesPayload {
 	if payload.Name != nil {
 		pub.Name = *payload.Name
 	}
-	if payload.UserID != nil {
-		pub.UserID = *payload.UserID
-	}
 	return &pub
 }
 
@@ -351,13 +444,10 @@ type UpdateSamplesPayload struct {
 	Detail string `form:"detail" json:"detail" yaml:"detail" xml:"detail"`
 	// name of sample
 	Name string `form:"name" json:"name" yaml:"name" xml:"name"`
-	// name of sample
-	UserID int `form:"user_id" json:"user_id" yaml:"user_id" xml:"user_id"`
 }
 
 // Validate runs the validation rules defined in the design.
 func (payload *UpdateSamplesPayload) Validate() (err error) {
-
 	if payload.Name == "" {
 		err = goa.MergeErrors(err, goa.MissingAttributeError(`raw`, "name"))
 	}
@@ -379,6 +469,14 @@ func (ctx *UpdateSamplesContext) BadRequest(r error) error {
 		ctx.ResponseData.Header().Set("Content-Type", "application/vnd.goa.error")
 	}
 	return ctx.ResponseData.Service.Send(ctx.Context, 400, r)
+}
+
+// Unauthorized sends a HTTP response with status code 401.
+func (ctx *UpdateSamplesContext) Unauthorized(r error) error {
+	if ctx.ResponseData.Header().Get("Content-Type") == "" {
+		ctx.ResponseData.Header().Set("Content-Type", "application/vnd.goa.error")
+	}
+	return ctx.ResponseData.Service.Send(ctx.Context, 401, r)
 }
 
 // NotFound sends a HTTP response with status code 404.

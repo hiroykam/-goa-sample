@@ -2,6 +2,7 @@ package controller
 
 import (
 	"github.com/goadesign/goa"
+	"github.com/goadesign/goa/middleware/security/jwt"
 	"github.com/hiroykam/goa-sample/app"
 	"github.com/hiroykam/goa-sample/sample_error"
 	"github.com/hiroykam/goa-sample/sample_logger"
@@ -33,8 +34,16 @@ func (c *SamplesController) Add(ctx *app.AddSamplesContext) error {
 		return ctx.BadRequest(err)
 	}
 
-	s := services.NewSampleService(c.db)
-	res, err := s.Add(ctx.Payload.UserID, ctx.Payload.Name, ctx.Payload.Detail)
+	s, err := services.NewSampleService(c.db)
+	if err != nil {
+		l.SampleError(err)
+		if err.Code == sample_error.UnAuthorized {
+			return ctx.Unauthorized(err)
+		}
+		return ctx.BadRequest(err)
+	}
+
+	res, err := s.Add(jwt.ContextJWT(ctx), ctx.Payload.Name, ctx.Payload.Detail)
 	if err != nil {
 		l.SampleError(err)
 		return ctx.BadRequest(err)
@@ -54,11 +63,18 @@ func (c *SamplesController) Delete(ctx *app.DeleteSamplesContext) error {
 		return ctx.BadRequest(err)
 	}
 
-	s := services.NewSampleService(c.db)
-	err = s.Delete(ctx.ID)
+	s, err := services.NewSampleService(c.db)
 	if err != nil {
 		l.SampleError(err)
-		if err.Code == sample_error.NotFoundError {
+		return ctx.BadRequest(err)
+	}
+
+	err = s.Delete(jwt.ContextJWT(ctx), ctx.ID)
+	if err != nil {
+		l.SampleError(err)
+		if err.Code == sample_error.UnAuthorized {
+			return ctx.Unauthorized(err)
+		} else if err.Code == sample_error.NotFoundError {
 			return ctx.NotFound()
 		}
 		return ctx.BadRequest(err)
@@ -78,11 +94,18 @@ func (c *SamplesController) List(ctx *app.ListSamplesContext) error {
 		return ctx.BadRequest(err)
 	}
 
-	s := services.NewSampleService(c.db)
-	res, err := s.GetSamples(ctx.UserID)
+	s, err := services.NewSampleService(c.db)
 	if err != nil {
 		l.SampleError(err)
-		if err.Code == sample_error.NotFoundError {
+		return ctx.BadRequest(err)
+	}
+
+	res, err := s.GetSamples(jwt.ContextJWT(ctx))
+	if err != nil {
+		l.SampleError(err)
+		if err.Code == sample_error.UnAuthorized {
+			return ctx.Unauthorized(err)
+		} else if err.Code == sample_error.NotFoundError {
 			return ctx.NotFound()
 		}
 		return ctx.BadRequest(err)
@@ -101,11 +124,18 @@ func (c *SamplesController) Show(ctx *app.ShowSamplesContext) error {
 		return ctx.BadRequest(err)
 	}
 
-	s := services.NewSampleService(c.db)
-	res, err := s.Show(ctx.ID)
+	s, err := services.NewSampleService(c.db)
 	if err != nil {
 		l.SampleError(err)
-		if err.Code == sample_error.NotFoundError {
+		return ctx.BadRequest(err)
+	}
+
+	res, err := s.Show(jwt.ContextJWT(ctx), ctx.ID)
+	if err != nil {
+		l.SampleError(err)
+		if err.Code == sample_error.UnAuthorized {
+			return ctx.Unauthorized(err)
+		} else if err.Code == sample_error.NotFoundError {
 			return ctx.NotFound()
 		}
 		return ctx.BadRequest(err)
@@ -125,11 +155,18 @@ func (c *SamplesController) Update(ctx *app.UpdateSamplesContext) error {
 		return ctx.BadRequest(err)
 	}
 
-	s := services.NewSampleService(c.db)
-	err = s.Update(ctx.ID, ctx.Payload.UserID, ctx.Payload.Name, ctx.Payload.Detail)
+	s, err := services.NewSampleService(c.db)
 	if err != nil {
 		l.SampleError(err)
-		if err.Code == sample_error.NotFoundError {
+		return ctx.BadRequest(err)
+	}
+
+	err = s.Update(jwt.ContextJWT(ctx), ctx.ID, ctx.Payload.Name, ctx.Payload.Detail)
+	if err != nil {
+		l.SampleError(err)
+		if err.Code == sample_error.UnAuthorized {
+			return ctx.Unauthorized(err)
+		} else if err.Code == sample_error.NotFoundError {
 			return ctx.NotFound()
 		}
 		return ctx.BadRequest(err)

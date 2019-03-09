@@ -3,6 +3,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/goadesign/goa"
 	"github.com/goadesign/goa/middleware"
 	"github.com/hiroykam/goa-sample/app"
@@ -22,11 +23,23 @@ func main() {
 	service.Use(sample_middleware.LogResponse())
 	service.Use(middleware.Recover())
 
+	// app.UseJWTMiddleware(service, jwt.New(jwt.NewSimpleResolver([]jwt.Key{key}), jwtHandler, app.NewJWTSecurity()))
+	jwtMiddleware, err := sample_middleware.NewJWTMiddleware()
+	if err != nil {
+		fmt.Println(err)
+		return;
+	}
+	app.UseJWTMiddleware(service, jwtMiddleware)
+
 	gdb, err := db.Open()
 	if err != nil {
 		service.LogError("open db", "err", err)
 		return
 	}
+
+	// Mount "samples" controller
+	auth := controller.NewAuthController(service, gdb)
+	app.MountAuthController(service, auth)
 
 	// Mount "samples" controller
 	sample := controller.NewSamplesController(service, gdb)

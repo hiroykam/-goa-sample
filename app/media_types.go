@@ -15,6 +15,26 @@ import (
 	"time"
 )
 
+// Auth result (default view)
+//
+// Identifier: application/vnd.auth+json; view=default
+type Auth struct {
+	Token *Token `form:"token" json:"token" yaml:"token" xml:"token"`
+}
+
+// Validate validates the Auth media type instance.
+func (mt *Auth) Validate() (err error) {
+	if mt.Token == nil {
+		err = goa.MergeErrors(err, goa.MissingAttributeError(`response`, "token"))
+	}
+	if mt.Token != nil {
+		if err2 := mt.Token.Validate(); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
+	return
+}
+
 // sample detail (default view)
 //
 // Identifier: application/vnd.sample+json; view=default
@@ -84,5 +104,24 @@ func (mt SamplesCollection) Validate() (err error) {
 			}
 		}
 	}
+	return
+}
+
+// token (default view)
+//
+// Identifier: application/vnd.token+json; view=default
+type Token struct {
+	// 期限
+	ExpiredAt time.Time `form:"expired_at" json:"expired_at" yaml:"expired_at" xml:"expired_at"`
+	// token value
+	Token string `form:"token" json:"token" yaml:"token" xml:"token"`
+}
+
+// Validate validates the Token media type instance.
+func (mt *Token) Validate() (err error) {
+	if mt.Token == "" {
+		err = goa.MergeErrors(err, goa.MissingAttributeError(`response`, "token"))
+	}
+
 	return
 }

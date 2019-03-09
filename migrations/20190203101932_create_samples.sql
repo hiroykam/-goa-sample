@@ -1,4 +1,5 @@
 -- +migrate Up
+
 CREATE TABLE IF NOT EXISTS samples
 (
 	id int unsigned NOT NULL AUTO_INCREMENT,

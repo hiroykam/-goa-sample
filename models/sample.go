@@ -20,10 +20,10 @@ func NewSampleModel(db *gorm.DB) *SampleModel {
 	}
 }
 
-func (m *SampleModel) Get(id int) (*entities.Sample, *sample_error.SampleError) {
+func (m *SampleModel) Get(id int, userId int) (*entities.Sample, *sample_error.SampleError) {
 	var native entities.Sample
 
-	db := m.db.Table(m.TableName()).Where("id = ?", id).First(&native)
+	db := m.db.Table(m.TableName()).Where("id = ? AND user_id = ?", id, userId).First(&native)
 	if db.Error == gorm.ErrRecordNotFound {
 		return nil, sample_error.NewSampleError(sample_error.NotFoundError, db.Error.Error())
 	} else if db.Error != nil {
@@ -44,7 +44,7 @@ func (m *SampleModel) List(userId int) ([]*entities.Sample, *sample_error.Sample
 	if len(objs) > 0 {
 		return objs, nil
 	}
-	return nil, sample_error.NewSampleError(sample_error.NotFoundError, db.Error.Error())
+	return nil, sample_error.NewSampleError(sample_error.NotFoundError, "list is empty")
 }
 
 func (m *SampleModel) Add(s *entities.Sample) *sample_error.SampleError {
@@ -63,9 +63,9 @@ func (m *SampleModel) Update(s *entities.Sample) *sample_error.SampleError {
 	return nil
 }
 
-func (m *SampleModel) Delete(id int) *sample_error.SampleError {
+func (m *SampleModel) Delete(id int, userId int) *sample_error.SampleError {
 	var obj entities.Sample
-	db := m.db.Delete(&obj, id)
+	db := m.db.Where("user_id = ?", userId).Delete(&obj, id)
 	if db.Error != nil {
 		return sample_error.NewSampleError(sample_error.InternalError, db.Error.Error())
 	}

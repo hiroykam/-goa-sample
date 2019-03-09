@@ -10,6 +10,14 @@
   revision = "f0300d1749da6fa982027e449ec0c7a145510c3c"
 
 [[projects]]
+  digest = "1:76dc72490af7174349349838f2fe118996381b31ea83243812a97e5a0fd5ed55"
+  name = "github.com/dgrijalva/jwt-go"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "06ea1031745cb8b3dab3f6a236daf2b0aa468b7e"
+  version = "v3.2.0"
+
+[[projects]]
   branch = "master"
   digest = "1:376e5a9fdb57657725ff19b4c510c3f5e1f804ab4ab0ff3064d8f4dc01e40fe2"
   name = "github.com/dimfeld/httppath"
@@ -42,7 +50,7 @@
   version = "v1.8.0"
 
 [[projects]]
-  digest = "1:d81e6d45cfadc49c3db514ed0245bc6435d86cf5aef73e3ce3e9089fa8d6db1c"
+  digest = "1:79000d0dfe46fd6bbe0ce46be282d12df03715d71c87925f13cf96418f834a08"
   name = "github.com/goadesign/goa"
   packages = [
     ".",
@@ -53,6 +61,7 @@
     "dslengine",
     "goatest",
     "middleware",
+    "middleware/security/jwt",
     "uuid",
   ]
   pruneopts = "UT"
@@ -172,6 +181,17 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:9d5b5d543996dd584da1db1e0de1926f3e4c3a8dba0fa2f8db70f3ebee2342e0"
+  name = "golang.org/x/crypto"
+  packages = [
+    "bcrypt",
+    "blowfish",
+  ]
+  pruneopts = "UT"
+  revision = "ffb98f73852f696ea2bb21a617a5c4b3e067a439"
+
+[[projects]]
+  branch = "master"
   digest = "1:7427036b6d926b3d1fa0773771820735b35554a98296f1074df440ee30a97296"
   name = "golang.org/x/net"
   packages = ["websocket"]
@@ -198,6 +218,7 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/dgrijalva/jwt-go",
     "github.com/go-sql-driver/mysql",
     "github.com/goadesign/goa",
     "github.com/goadesign/goa/client",
@@ -206,11 +227,14 @@
     "github.com/goadesign/goa/design/apidsl",
     "github.com/goadesign/goa/goatest",
     "github.com/goadesign/goa/middleware",
+    "github.com/goadesign/goa/middleware/security/jwt",
     "github.com/goadesign/goa/uuid",
     "github.com/inconshreveable/log15",
     "github.com/jinzhu/gorm",
     "github.com/joho/godotenv",
+    "github.com/satori/go.uuid",
     "github.com/spf13/cobra",
+    "golang.org/x/crypto/bcrypt",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

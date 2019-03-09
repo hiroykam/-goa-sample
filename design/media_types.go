@@ -8,6 +8,31 @@ import (
 
 )
 
+var Token = MediaType("application/vnd.token+json", func() {
+	Description("token")
+	Attribute("token", String, "token value", func() {
+		Example("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c")
+	})
+	Attribute("expired_at", DateTime, "期限", func() {
+		loc, _ := time.LoadLocation("Asia/Tokyo")
+		Example(time.Date(2019, 01, 31, 0, 0, 0, 0, loc).Format(time.RFC3339))
+	})
+	Required("token", "expired_at")
+	View("default", func() {
+		Attribute("token")
+		Attribute("expired_at")
+	})
+})
+
+var AuthSamples = MediaType("application/vnd.auth+json", func() {
+	Description("Auth result")
+	Attribute("token", Token)
+	Required("token")
+	View("default", func() {
+		Attribute("token")
+	})
+})
+
 var MediaSamples = MediaType("application/vnd.samples+json", func() {
 	Description("sample list")
 	Attribute("id", Integer, "id", func() {
