@@ -3,7 +3,7 @@
 CREATE TABLE IF NOT EXISTS users
 (
 	id int unsigned NOT NULL AUTO_INCREMENT,
-	email varchar(255) NOT NULL,
+	email varchar(255) UNIQUE NOT NULL,
   hashed_password varchar(255) NOT NULL,
 	revoked_at datetime,
 	locked_at  datetime,

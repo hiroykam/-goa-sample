@@ -32,6 +32,7 @@ func initService(service *goa.Service) {
 type AuthController interface {
 	goa.Muxer
 	Login(*LoginAuthContext) error
+	Reauthenticate(*ReauthenticateAuthContext) error
 }
 
 // MountAuthController "mounts" a Auth resource controller on the given service.
@@ -39,6 +40,7 @@ func MountAuthController(service *goa.Service, ctrl AuthController) {
 	initService(service)
 	var h goa.Handler
 	service.Mux.Handle("OPTIONS", "/api/v1/login", ctrl.MuxHandler("preflight", handleAuthOrigin(cors.HandlePreflight()), nil))
+	service.Mux.Handle("OPTIONS", "/api/v1/refresh_token", ctrl.MuxHandler("preflight", handleAuthOrigin(cors.HandlePreflight()), nil))
 
 	h = func(ctx context.Context, rw http.ResponseWriter, req *http.Request) error {
 		// Check if there was an error loading the request
@@ -61,6 +63,28 @@ func MountAuthController(service *goa.Service, ctrl AuthController) {
 	h = handleAuthOrigin(h)
 	service.Mux.Handle("POST", "/api/v1/login", ctrl.MuxHandler("login", h, unmarshalLoginAuthPayload))
 	service.LogInfo("mount", "ctrl", "Auth", "action", "Login", "route", "POST /api/v1/login")
+
+	h = func(ctx context.Context, rw http.ResponseWriter, req *http.Request) error {
+		// Check if there was an error loading the request
+		if err := goa.ContextError(ctx); err != nil {
+			return err
+		}
+		// Build the context
+		rctx, err := NewReauthenticateAuthContext(ctx, req, service)
+		if err != nil {
+			return err
+		}
+		// Build the payload
+		if rawPayload := goa.ContextRequest(ctx).Payload; rawPayload != nil {
+			rctx.Payload = rawPayload.(*ReauthenticateAuthPayload)
+		} else {
+			return goa.MissingPayloadError()
+		}
+		return ctrl.Reauthenticate(rctx)
+	}
+	h = handleAuthOrigin(h)
+	service.Mux.Handle("POST", "/api/v1/refresh_token", ctrl.MuxHandler("reauthenticate", h, unmarshalReauthenticateAuthPayload))
+	service.LogInfo("mount", "ctrl", "Auth", "action", "Reauthenticate", "route", "POST /api/v1/refresh_token")
 }
 
 // handleAuthOrigin applies the CORS response headers corresponding to the origin.
@@ -93,6 +117,21 @@ func handleAuthOrigin(h goa.Handler) goa.Handler {
 // unmarshalLoginAuthPayload unmarshals the request body into the context request data Payload field.
 func unmarshalLoginAuthPayload(ctx context.Context, service *goa.Service, req *http.Request) error {
 	payload := &loginAuthPayload{}
+	if err := service.DecodeRequest(req, payload); err != nil {
+		return err
+	}
+	if err := payload.Validate(); err != nil {
+		// Initialize payload with private data structure so it can be logged
+		goa.ContextRequest(ctx).Payload = payload
+		return err
+	}
+	goa.ContextRequest(ctx).Payload = payload.Publicize()
+	return nil
+}
+
+// unmarshalReauthenticateAuthPayload unmarshals the request body into the context request data Payload field.
+func unmarshalReauthenticateAuthPayload(ctx context.Context, service *goa.Service, req *http.Request) error {
+	payload := &reauthenticateAuthPayload{}
 	if err := service.DecodeRequest(req, payload); err != nil {
 		return err
 	}

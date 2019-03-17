@@ -19,7 +19,8 @@ import (
 //
 // Identifier: application/vnd.auth+json; view=default
 type Auth struct {
-	Token *Token `form:"token" json:"token" yaml:"token" xml:"token"`
+	RefreshToken *RefreshToken `form:"refresh_token" json:"refresh_token" yaml:"refresh_token" xml:"refresh_token"`
+	Token        *Token        `form:"token" json:"token" yaml:"token" xml:"token"`
 }
 
 // Validate validates the Auth media type instance.
@@ -27,11 +28,38 @@ func (mt *Auth) Validate() (err error) {
 	if mt.Token == nil {
 		err = goa.MergeErrors(err, goa.MissingAttributeError(`response`, "token"))
 	}
+	if mt.RefreshToken == nil {
+		err = goa.MergeErrors(err, goa.MissingAttributeError(`response`, "refresh_token"))
+	}
+	if mt.RefreshToken != nil {
+		if err2 := mt.RefreshToken.Validate(); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
 	if mt.Token != nil {
 		if err2 := mt.Token.Validate(); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
+	return
+}
+
+// refresh token (default view)
+//
+// Identifier: application/vnd.refresh_token+json; view=default
+type RefreshToken struct {
+	// 期限
+	ExpiredAt time.Time `form:"expired_at" json:"expired_at" yaml:"expired_at" xml:"expired_at"`
+	// refresh token value
+	RefreshToken string `form:"refresh_token" json:"refresh_token" yaml:"refresh_token" xml:"refresh_token"`
+}
+
+// Validate validates the RefreshToken media type instance.
+func (mt *RefreshToken) Validate() (err error) {
+	if mt.RefreshToken == "" {
+		err = goa.MergeErrors(err, goa.MissingAttributeError(`response`, "refresh_token"))
+	}
+
 	return
 }
 

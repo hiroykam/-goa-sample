@@ -149,6 +149,14 @@
   version = "v0.0.4"
 
 [[projects]]
+  digest = "1:cf31692c14422fa27c83a05292eb5cbe0fb2775972e8f1f8446a71549bd8980b"
+  name = "github.com/pkg/errors"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "ba968bfe8b2f7e042a574c888954fccecfa385b4"
+  version = "v0.8.1"
+
+[[projects]]
   digest = "1:a3b8912deeef29007fab9a13a9f21b9e9b59c621a2ed61e2fe7b37320a71fbd5"
   name = "github.com/satori/go.uuid"
   packages = ["."]
@@ -232,6 +240,7 @@
     "github.com/inconshreveable/log15",
     "github.com/jinzhu/gorm",
     "github.com/joho/godotenv",
+    "github.com/pkg/errors",
     "github.com/satori/go.uuid",
     "github.com/spf13/cobra",
     "golang.org/x/crypto/bcrypt",

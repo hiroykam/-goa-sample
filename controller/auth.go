@@ -51,3 +51,34 @@ func (c *AuthController) Login(ctx *app.LoginAuthContext) error {
 	return ctx.OK(res)
 	// AuthController_Login: end_implement
 }
+
+func (c *AuthController) Reauthenticate(ctx *app.ReauthenticateAuthContext) error {
+	l, err := sample_logger.NewSampleLooger(ctx)
+	if err != nil {
+		return ctx.BadRequest(err)
+	}
+
+	if err != nil {
+		return ctx.BadRequest(err)
+	}
+
+	h, err := services.NewHashedRefreshTokenService(c.db)
+	if err != nil {
+		l.SampleError(err)
+		if err.Code == sample_error.NotFoundError {
+			return ctx.NotFound()
+		}
+		return ctx.BadRequest(err)
+	}
+
+	a, err := h.Update(ctx.Payload.RefreshToken)
+	if err != nil {
+		l.SampleError(err)
+		if err.Code == sample_error.NotFoundError {
+			return ctx.NotFound()
+		}
+		return ctx.BadRequest(err)
+	}
+
+	return ctx.OK(a)
+}

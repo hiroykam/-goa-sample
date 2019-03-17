@@ -26,6 +26,18 @@ var _ = Resource("auth", func() {
 		Response(NotFound)
 		Response(BadRequest, ErrorMedia)
 	})
+	Action("reauthenticate", func() {
+		Routing(POST("/refresh_token"))
+		Payload(func() {
+			Attribute("refresh_token", String, "refresh token", func() {
+				Example("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c")
+			})
+			Required("refresh_token")
+		})
+		Response(OK, AuthSamples)
+		Response(NotFound)
+		Response(BadRequest, ErrorMedia)
+	})
 })
 
 var _ = Resource("samples", func() {

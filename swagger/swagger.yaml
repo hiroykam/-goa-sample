@@ -22,14 +22,20 @@ definitions:
   Auth:
     description: Auth result (default view)
     example:
+      refresh_token:
+        expired_at: "2019-01-31T00:00:00+09:00"
+        refresh_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
       token:
         expired_at: "2019-01-31T00:00:00+09:00"
         token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
     properties:
+      refresh_token:
+        $ref: '#/definitions/Refresh_token'
       token:
         $ref: '#/definitions/Token'
     required:
     - token
+    - refresh_token
     title: 'Mediatype identifier: application/vnd.auth+json; view=default'
     type: object
   LoginAuthPayload:
@@ -49,6 +55,38 @@ definitions:
     - email
     - password
     title: LoginAuthPayload
+    type: object
+  ReauthenticateAuthPayload:
+    example:
+      refresh_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+    properties:
+      refresh_token:
+        description: refresh token
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+        type: string
+    required:
+    - refresh_token
+    title: ReauthenticateAuthPayload
+    type: object
+  Refresh_token:
+    description: refresh token (default view)
+    example:
+      expired_at: "2019-01-31T00:00:00+09:00"
+      refresh_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+    properties:
+      expired_at:
+        description: 期限
+        example: "2019-01-31T00:00:00+09:00"
+        format: date-time
+        type: string
+      refresh_token:
+        description: refresh token value
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+        type: string
+    required:
+    - refresh_token
+    - expired_at
+    title: 'Mediatype identifier: application/vnd.refresh_token+json; view=default'
     type: object
   Sample:
     description: sample detail (default view)
@@ -259,6 +297,35 @@ paths:
       - http
       - https
       summary: login auth
+      tags:
+      - auth
+  /api/v1/refresh_token:
+    post:
+      operationId: auth#reauthenticate
+      parameters:
+      - in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/ReauthenticateAuthPayload'
+      produces:
+      - application/vnd.auth+json
+      - application/vnd.goa.error
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/Auth'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/error'
+        "404":
+          description: Not Found
+      schemes:
+      - http
+      - https
+      summary: reauthenticate auth
       tags:
       - auth
   /api/v1/samples/:

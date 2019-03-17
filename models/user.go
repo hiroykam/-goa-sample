@@ -7,7 +7,7 @@ import (
 )
 
 type UserModel struct {
-	db *gorm.DB
+	Db *gorm.DB
 }
 
 func (m UserModel) TableName() string {
@@ -16,14 +16,19 @@ func (m UserModel) TableName() string {
 
 func NewUserModel(db *gorm.DB) *UserModel {
 	return &UserModel{
-		db: db,
+		Db: db,
 	}
 }
 
-func (m *UserModel) GetWithEmail(email string,) (*entities.User, *sample_error.SampleError) {
+func (m *UserModel) GetWithEmail(email string, tx *gorm.DB) (*entities.User, *sample_error.SampleError) {
 	var native entities.User
 
-	db := m.db.Table(m.TableName()).Where("email = ?", email).First(&native)
+	var db *gorm.DB
+	if tx != nil {
+		db = tx.Table(m.TableName()).Where("email = ?", email).First(&native)
+	} else {
+		db = m.Db.Table(m.TableName()).Where("email = ?", email).First(&native)
+	}
 	if db.Error == gorm.ErrRecordNotFound {
 		return nil, sample_error.NewSampleError(sample_error.NotFoundError, db.Error.Error())
 	} else if db.Error != nil {
@@ -36,7 +41,7 @@ func (m *UserModel) GetWithEmail(email string,) (*entities.User, *sample_error.S
 func (m *UserModel) Get(id int) (*entities.User, *sample_error.SampleError) {
 	var native entities.User
 
-	db := m.db.Table(m.TableName()).Where("id = ?", id).First(&native)
+	db := m.Db.Table(m.TableName()).Where("id = ?", id).First(&native)
 	if db.Error == gorm.ErrRecordNotFound {
 		return nil, sample_error.NewSampleError(sample_error.NotFoundError, db.Error.Error())
 	} else if db.Error != nil {

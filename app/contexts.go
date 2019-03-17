@@ -109,6 +109,85 @@ func (ctx *LoginAuthContext) NotFound() error {
 	return nil
 }
 
+// ReauthenticateAuthContext provides the auth reauthenticate action context.
+type ReauthenticateAuthContext struct {
+	context.Context
+	*goa.ResponseData
+	*goa.RequestData
+	Payload *ReauthenticateAuthPayload
+}
+
+// NewReauthenticateAuthContext parses the incoming request URL and body, performs validations and creates the
+// context used by the auth controller reauthenticate action.
+func NewReauthenticateAuthContext(ctx context.Context, r *http.Request, service *goa.Service) (*ReauthenticateAuthContext, error) {
+	var err error
+	resp := goa.ContextResponse(ctx)
+	resp.Service = service
+	req := goa.ContextRequest(ctx)
+	req.Request = r
+	rctx := ReauthenticateAuthContext{Context: ctx, ResponseData: resp, RequestData: req}
+	return &rctx, err
+}
+
+// reauthenticateAuthPayload is the auth reauthenticate action payload.
+type reauthenticateAuthPayload struct {
+	// refresh token
+	RefreshToken *string `form:"refresh_token,omitempty" json:"refresh_token,omitempty" yaml:"refresh_token,omitempty" xml:"refresh_token,omitempty"`
+}
+
+// Validate runs the validation rules defined in the design.
+func (payload *reauthenticateAuthPayload) Validate() (err error) {
+	if payload.RefreshToken == nil {
+		err = goa.MergeErrors(err, goa.MissingAttributeError(`raw`, "refresh_token"))
+	}
+	return
+}
+
+// Publicize creates ReauthenticateAuthPayload from reauthenticateAuthPayload
+func (payload *reauthenticateAuthPayload) Publicize() *ReauthenticateAuthPayload {
+	var pub ReauthenticateAuthPayload
+	if payload.RefreshToken != nil {
+		pub.RefreshToken = *payload.RefreshToken
+	}
+	return &pub
+}
+
+// ReauthenticateAuthPayload is the auth reauthenticate action payload.
+type ReauthenticateAuthPayload struct {
+	// refresh token
+	RefreshToken string `form:"refresh_token" json:"refresh_token" yaml:"refresh_token" xml:"refresh_token"`
+}
+
+// Validate runs the validation rules defined in the design.
+func (payload *ReauthenticateAuthPayload) Validate() (err error) {
+	if payload.RefreshToken == "" {
+		err = goa.MergeErrors(err, goa.MissingAttributeError(`raw`, "refresh_token"))
+	}
+	return
+}
+
+// OK sends a HTTP response with status code 200.
+func (ctx *ReauthenticateAuthContext) OK(r *Auth) error {
+	if ctx.ResponseData.Header().Get("Content-Type") == "" {
+		ctx.ResponseData.Header().Set("Content-Type", "application/vnd.auth+json")
+	}
+	return ctx.ResponseData.Service.Send(ctx.Context, 200, r)
+}
+
+// BadRequest sends a HTTP response with status code 400.
+func (ctx *ReauthenticateAuthContext) BadRequest(r error) error {
+	if ctx.ResponseData.Header().Get("Content-Type") == "" {
+		ctx.ResponseData.Header().Set("Content-Type", "application/vnd.goa.error")
+	}
+	return ctx.ResponseData.Service.Send(ctx.Context, 400, r)
+}
+
+// NotFound sends a HTTP response with status code 404.
+func (ctx *ReauthenticateAuthContext) NotFound() error {
+	ctx.ResponseData.WriteHeader(404)
+	return nil
+}
+
 // AddSamplesContext provides the samples add action context.
 type AddSamplesContext struct {
 	context.Context

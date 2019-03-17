@@ -1,6 +1,7 @@
 package services
 
 import (
+	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/hiroykam/goa-sample/app"
 	"github.com/hiroykam/goa-sample/models"
@@ -26,26 +27,48 @@ func NewUserService(db *gorm.DB) (*UserService, *sample_error.SampleError) {
 }
 
 func (s *UserService) AuthWithEmailAndPassword(email, password string) (*app.Auth, *sample_error.SampleError) {
-	u, err := s.model.GetWithEmail(email)
+	tx := s.model.Db.Begin()
+
+	h, err := NewHashedRefreshTokenService(tx)
 	if err != nil {
+		return nil, err
+	}
+
+	u, err := s.model.GetWithEmail(email, tx)
+	if err != nil {
+		tx.Rollback()
 		return nil, err
 	}
 
 	err = Confirm(u.HashedPassword, password)
 	if err != nil {
+		tx.Rollback()
 		return nil, err
 	}
 
-	a, err := s.Auth.IssueTokens(u.ID)
+	a, jti, err := s.Auth.IssueTokens(u.ID)
 	if err != nil {
+		tx.Rollback()
 		return nil, err
 	}
+
+	err = h.AddOrUpdate(u.ID, jti)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	tx.Commit()
+	fmt.Println("test")
 
 	return a, nil
 }
 
 func (s *UserService) AuthWithToken(token *jwt.Token) (*int, *sample_error.SampleError) {
 	id, err := s.Auth.GetId(token)
+	if err != nil {
+		return nil, err
+	}
 
 	_, err = s.model.Get(id)
 	if err != nil {
