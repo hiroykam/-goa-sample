@@ -1,7 +1,6 @@
 package services
 
 import (
-	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/hiroykam/goa-sample/app"
 	"github.com/hiroykam/goa-sample/models"
@@ -34,34 +33,34 @@ func (s *UserService) AuthWithEmailAndPassword(email, password string) (*app.Aut
 		return nil, err
 	}
 
-	u, err := s.model.GetWithEmail(email, tx)
+	var Auth *app.Auth
+	txFunc := func(db *gorm.DB) *sample_error.SampleError {
+		u, err := s.model.GetWithEmail(email, tx)
+		if err != nil {
+			return err
+		}
+
+		err = Confirm(u.HashedPassword, password)
+		if err != nil {
+			return err
+		}
+
+		var jti string
+		Auth, jti, err = s.Auth.IssueTokens(u.ID)
+		if err != nil {
+			return err
+		}
+
+		err = h.AddOrUpdate(u.ID, jti)
+		return err
+	}
+
+	err = models.GormTransaction(s.model.Db, txFunc)
 	if err != nil {
-		tx.Rollback()
 		return nil, err
 	}
 
-	err = Confirm(u.HashedPassword, password)
-	if err != nil {
-		tx.Rollback()
-		return nil, err
-	}
-
-	a, jti, err := s.Auth.IssueTokens(u.ID)
-	if err != nil {
-		tx.Rollback()
-		return nil, err
-	}
-
-	err = h.AddOrUpdate(u.ID, jti)
-	if err != nil {
-		tx.Rollback()
-		return nil, err
-	}
-
-	tx.Commit()
-	fmt.Println("test")
-
-	return a, nil
+	return Auth, nil
 }
 
 func (s *UserService) AuthWithToken(token *jwt.Token) (*int, *sample_error.SampleError) {

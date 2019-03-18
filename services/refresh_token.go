@@ -54,27 +54,26 @@ func (s *RefreshTokenService) Update(refreshToken string) (*app.Auth, *sample_er
 		return nil, err
 	}
 
-	s.model.Db = s.model.Db.Begin()
+	var Auth *app.Auth
+	txFunc := func(db *gorm.DB) *sample_error.SampleError {
+		h, err := s.model.GetByJti(jti)
+		if err != nil {
+			return err
+		}
 
-	h, err := s.model.GetByJti(jti)
+		Auth, jti, err = s.auth.IssueTokens(h.UserID)
+		if err != nil {
+			return err
+		}
+
+		err = s.model.Update(h.UserID, jti)
+		return err
+	}
+
+	err = models.GormTransaction(s.model.Db, txFunc)
 	if err != nil {
-		s.model.Db.Rollback()
 		return nil, err
 	}
 
-	a, jti, err := s.auth.IssueTokens(h.UserID)
-	if err != nil {
-		s.model.Db.Rollback()
-		return nil, err
-	}
-
-	err = s.model.Update(h.UserID, jti)
-	if err != nil {
-		s.model.Db.Rollback()
-		return nil, err
-	}
-
-	s.model.Db.Commit()
-
-	return a, nil
+	return Auth, nil
 }
