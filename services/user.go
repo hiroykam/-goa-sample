@@ -26,16 +26,14 @@ func NewUserService(db *gorm.DB) (*UserService, *sample_error.SampleError) {
 }
 
 func (s *UserService) AuthWithEmailAndPassword(email, password string) (*app.Auth, *sample_error.SampleError) {
-	tx := s.model.Db.Begin()
-
-	h, err := NewHashedRefreshTokenService(tx)
-	if err != nil {
-		return nil, err
-	}
-
 	var Auth *app.Auth
 	txFunc := func(db *gorm.DB) *sample_error.SampleError {
-		u, err := s.model.GetWithEmail(email, tx)
+		h, err := NewHashedRefreshTokenService(db)
+		if err != nil {
+			return err
+		}
+
+		u, err := s.model.GetWithEmail(email, db)
 		if err != nil {
 			return err
 		}
@@ -55,7 +53,7 @@ func (s *UserService) AuthWithEmailAndPassword(email, password string) (*app.Aut
 		return err
 	}
 
-	err = models.GormTransaction(s.model.Db, txFunc)
+	err := models.GormTransaction(s.model.Db, txFunc)
 	if err != nil {
 		return nil, err
 	}

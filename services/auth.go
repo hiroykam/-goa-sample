@@ -3,13 +3,13 @@ package services
 import (
 	"crypto/rsa"
 	"fmt"
-	"github.com/hiroykam/goa-sample/sample_middleware"
 	"io/ioutil"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/hiroykam/goa-sample/app"
 	"github.com/hiroykam/goa-sample/sample_error"
+	"github.com/hiroykam/goa-sample/sample_middleware"
 	"github.com/pkg/errors"
 	"github.com/satori/go.uuid"
 )
@@ -101,20 +101,24 @@ func (c *AuthSharedService) GetId(token *jwt.Token) (int, *sample_error.SampleEr
 }
 
 func (c *AuthSharedService) VerifyToken(tokenString string) (string, *sample_error.SampleError) {
-	parsedToken, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		// check signing method
-		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
-			return nil, errors.New("Unexpected signing method")
-		}
-		keys, err := sample_middleware.LoadJWTPublicKeys()
-		if err != nil {
-			return nil, err
-		}
-		return keys[0], nil
-	})
-
+	keys, err := sample_middleware.LoadJWTPublicKeys()
 	if err != nil {
-		fmt.Println("test")
+		return "", sample_error.NewSampleError(sample_error.InternalError, err.Error())
+	}
+	var parsedToken *jwt.Token
+	for _, key := range keys {
+		parsedToken, err = jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+			// check signing method
+			if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+				return nil, errors.New("Unexpected signing method")
+			}
+			return key, nil
+		})
+		if err != nil {
+			break
+		}
+	}
+	if err != nil {
 		return "", sample_error.NewSampleError(sample_error.UnAuthorized, err.Error())
 	}
 
